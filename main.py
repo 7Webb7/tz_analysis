@@ -1,5 +1,5 @@
 import pandas as pd
-
+import re
 data_branches = pd.read_csv("data_files/t_branches.csv")
 df_branches = pd.DataFrame(data_branches)
 
@@ -10,7 +10,9 @@ df_branches.fillna('', inplace=True)
 
 
 def determine_building_type(first, second):
-    if 'склад' in first.lower() or 'склад' in second.lower():
+    pattern = re.compile(r'\b[сc][кk][лl][аa][дd]\b', re.IGNORECASE)
+
+    if pattern.search(first) or pattern.search(second):
         return "Склад"
     else:
         return "Магазин"
