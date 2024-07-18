@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import matplotlib.pyplot as plt
 
 df_sales = pd.read_csv("data_files/t_sales.csv")
 sales = pd.DataFrame(df_sales)
@@ -66,3 +67,52 @@ cities_sales.rename(columns={"Наименование_x": "Город"}, inplac
 cities_sales = cities_sales.sort_values(by="Количество", ascending=False).head(10)
 cities_sales.reset_index()
 print(cities_sales)
+
+#Вычисление дня и времени с наибольшими продажами
+
+
+sales["Период"] = pd.to_datetime(sales["Период"])
+sales["Час"] = sales["Период"].dt.hour
+sales["День недели"] = sales["Период"].dt.dayofweek
+
+sales_hours = sales.groupby("Час")["Количество"].sum().reset_index()
+sales_days = sales.groupby("День недели")["Количество"].sum().reset_index()
+pivot_table = sales.pivot_table(values='Количество', index='День недели', columns='Час', aggfunc='sum', fill_value=0)
+max_sales_day = pivot_table.sum(axis=1).idxmax()
+sales_for_max_day = pivot_table.loc[max_sales_day]
+plt.figure(figsize=(10, 6))
+sales_for_max_day.plot(kind='bar')
+days_of_week = {0: 'Понедельник', 1: 'Вторник', 2: 'Среда', 3: 'Четверг', 4: 'Пятница', 5: 'Суббота', 6: 'Воскресенье'}
+
+pivot_table.rename(index=days_of_week, inplace=True)
+
+sales_for_max_day = pivot_table.loc[days_of_week[max_sales_day]]
+plt.figure(figsize=(10, 6))
+sales_for_max_day.plot(kind='bar')
+plt.title(f'Продажи по часам для {days_of_week[max_sales_day]}')
+plt.xlabel('Час')
+plt.ylabel('Количество продаж')
+plt.xticks(rotation=0)
+plt.grid(True)
+plt.show()
+
+#тут классификация по квантилям
+
+sales_and_products = merged_b_s_p.groupby(["Наименование_y"])["Количество"].sum().reset_index()
+quantile_0_3 = sales_and_products['Количество'].quantile(0.3)
+quantile_0_9 = sales_and_products['Количество'].quantile(0.9)
+
+
+def classify_product(row):
+    if row['Количество'] > quantile_0_9:
+        return 'Верхний квантиль (0.9)'
+    elif row['Количество'] > quantile_0_3:
+        return 'Средний квантиль (0.3 - 0.9)'
+    else:
+        return 'Нижний квантиль (0.3)'
+
+
+sales_and_products['Класс'] = sales_and_products.apply(classify_product, axis=1)
+sales_and_products = sales_and_products.sort_values(by="Количество", ascending=False).reset_index()
+sales_and_products = sales_and_products.drop(columns=["index"])
+sales_and_products
