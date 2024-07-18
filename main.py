@@ -40,8 +40,12 @@ print(shops_sales_ten)
 print(warehouses_sales_ten)
 
 #здесь топ-10 товаров по продажам на складах и магазинах
+pattern = r"доставка|отгрузка|обработка"
+
 products.rename(columns = {"Ссылка" : "Номенклатура"}, inplace = True)
 merged_b_s_p = pd.merge(merged_b_s, products, on = "Номенклатура")
+
+merged_b_s_p = merged_b_s_p[~merged_b_s_p["Наименование_y"].str.contains(pattern, case=False, regex = True)]
 products_sales = merged_b_s_p.groupby(["Номенклатура", "Наименование_y", "Тип"])["Количество"].sum().reset_index()
 warehouses_products = products_sales[products_sales["Тип"] == "Склад"]
 shops_products = products_sales[products_sales["Тип"] == "Магазин"]
